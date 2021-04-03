@@ -1,21 +1,32 @@
 class Vehicle:
     def __init__(self, nb_streets, streets):
-        self.NB_Streets = nb_streets # Number of street before destination
-        self.Streets = streets # List of streets names (path before destionation)
-    
+        self.nb_streets = nb_streets # Number of street before destination
+        self.streets = streets # List of streets names (path before destionation)
+        self.index = 0 # Position in the streets path
+        self.score = 0 # the score of the vehicle
+
     def print(self):
-        print(f"NB_Streets={self.NB_Streets} Streets=[{', '.join(self.Streets)}]")
+        print(f"nb_streets={self.nb_streets} streets=[{', '.join(self.streets)}]")
 
 
 class Street:
     def __init__(self, id_b, id_e, name, time):
-        self.ID_B = id_b # Intersection link to the begging of the street
-        self.ID_E = id_e # Intersection link to the endding of the street
-        self.Name = name # Name of the street
+        self.name = name # Name of the street
+        self.id_b = id_b # Intersection link to the begging of the street
+        self.id_e = id_e # Intersection link to the endding of the street
         self.T = time # Time to travel across the street
-    
+        self.vehicles = [] # tuple list of vehicle and the time when they arrive at the end of street (vehicle, 2)
+
     def print(self):
-        print(f"ID_B={self.ID_B} ID_E={self.ID_E} Name={self.Name} T={self.T}")
+        print(f"id_b={self.id_b} id_e={self.id_e} name={self.name} T={self.T}")
+    
+class Intersection:
+    def ___init___(self, id, streets_i, streets_o, schedulers):
+        self.id = id
+        self.streets_i = streets_i # List of incomming streets
+        self.streets_o = streets_o # List of outgoing streets
+        self.schedulers = schedulers # List of tuple (incomming street, duration of green light)
+        self.index = 0 # index of scheduler
 
 '''
 to display node graph
