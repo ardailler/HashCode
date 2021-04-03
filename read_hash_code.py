@@ -39,6 +39,12 @@ class Env:
         self.S = 0 # Number of streets
         self.V = 0 # Number of vehicles
         self.F = 0 # Score for each vehicles (when endding their path)
+
+        self.streets = []
+        self.intersections = []
+        self.vehicles = []
+
+        self.visited_streets = []
         
     def saveInitValues(self, d, i, s, v, f):
         self.D = d
@@ -67,12 +73,16 @@ class Env:
                 # Iterate on each street lines
                 if (self.S + 1 >= count):
                     [id_b, end_e, name, time] = line.split() # read street line
-                    street = Street(id_b, end_e, name, time) # create new Street Object # TODO need to be store
-                    intersections_dict.setdefault(end_e,[]).append(street) # append street in it's endding intersection
+                    street = Street(id_b, end_e, name, time) # create new Street Object
+                    self.streets.append(street)
+                    # intersections_dict.setdefault(end_e,[]).append(street) # append street in it's endding intersection
+                    # print(end_e)
+                    # self.intersections[end_e] += [street] # append street in it's endding intersection TODO self.addIntersection (id, street, 'in/out')
                     # street.print() # debug to print street infos
                 elif (self.S + 1 + self.V >= count):
                     vehicle_infos = line.split() # read street line
-                    vehicle = Vehicle(vehicle_infos[0], vehicle_infos[1:]) # TODO need to be store
+                    vehicle = Vehicle(vehicle_infos[0], vehicle_infos[1:]) # create a new Vehicle
+                    self.vehicles.append(vehicle)
                     # vehicle.print()
                     # print("Line_{}: {}".format(count, line.strip()))
 
