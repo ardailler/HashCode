@@ -1,3 +1,10 @@
+'''
+Vehicle
+@param nb_streets (int) : number of streets the car must cross to complete its path
+@param streets (string[]) : the list of the street names
+@param index (int) : the current position of the car in this list
+@param score (int) : the current score of the car 
+'''
 class Vehicle:
     def __init__(self, nb_streets, streets):
         self.nb_streets = nb_streets # Number of street before destination
@@ -11,7 +18,14 @@ class Vehicle:
     def print(self):
         print(f"nb_streets={self.nb_streets} streets=[{', '.join(self.streets)}]")
 
-
+'''
+Street
+@param name (string) : The unique name of the street
+@param id_b (int) : Intersection link to the begging of the street
+@param id_e (int) : Intersection link to the endding of the street
+@param T (int) : Time to travel across the street
+@param vehicles ((Vehicle, int)[]) : tuple list of vehicle and the time when they arrive at the end of street (ex: if D = 4 and T = 3 => 4 + 3 = 7)
+'''
 class Street:
     def __init__(self, id_b, id_e, name, time):
         self.name = name # Name of the street
@@ -25,7 +39,15 @@ class Street:
 
     def print(self):
         print(f"id_b={self.id_b} id_e={self.id_e} name={self.name} T={self.T}")
-    
+
+'''
+Intersection
+@param id (int) : unique id of the intersection
+@param streets_i (Street[]) : List of incomming streets
+@param streets_o (Street[]) : List of outgoing streets
+@param schedulers ((Street, int)[]) List of tuple (incomming street, duration of green light)
+@param index (int) : index of scheduler
+'''
 class Intersection:
     def __init__(self, id_i):
         self.id = id_i
@@ -77,6 +99,7 @@ class Env:
         else: # Case where the intersection not exist
             intersection = Intersection(id_i)
         
+        # selecting the list where we need to add the current street (incomming or outgoing street list)
         if inOrOut == 'in':
             intersection.addStreetI(street)
         elif inOrOut == 'out':
