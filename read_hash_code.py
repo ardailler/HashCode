@@ -71,18 +71,11 @@ class Street:
                 # and remove it from the street
                 del self.vehicles[index]
     
-    '''
-    -> if d >= timeToMove
-        -> then vehicle.step()
-        -> del vehicle
-        -> return vehicle
-    -> else return None
-    '''
     def step(self, t):
-        (vehicle, timeWhenMove) = self.vehicles[-1]
+        (vehicle, timeWhenMove) = self.vehicles[0]
         if t >= timeWhenMove:
             vehicle.step()
-            del self.vehicles[-1]
+            del self.vehicles[0]
             return vehicle
         else:
             return None
@@ -128,11 +121,11 @@ class Intersection:
         if (len(self.schedulers) > 0):
             (street, timer, green_since) = self.schedulers[self.index]
             # first we check if we need to switch green light
-            if (green_since + timer) - t <= 0:
+            if (green_since + timer) >= t:
                 self.nextScheduler(t)
                 (street, timer, green_since) = self.schedulers[self.index]
 
-            vehicleToMove = street.step(i)
+            vehicleToMove = street.step(t)
             if not None:
                 street = vehicleToMove.getStreet()
                 self.streets_o[street].addVehicle(vehicleToMove, t)
@@ -243,21 +236,27 @@ class Env:
 
     def run(self):
         for t in range(self.D): # ? D or (D - 1)
-            for id_inter, intersection in self.intersections.items():
-                intersection.step(t)
-                break
-            # at the end of the intersections step we check if their are vehicle that has finish there path
+            print(f"{t} / {self.D}", end='\r')
+            # before the intersections step we check if their are vehicle that has finish there path
             for id_street, street in self.streets.items():
                 street.deleteVehiclesArrived(t)
-            break
+
+            for id_inter, intersection in self.intersections.items():
+                intersection.step(t)
+        
+        # ? not sure if we need to do that to
+        for id_street, street in self.streets.items():
+            street.deleteVehiclesArrived(t)
+
+        return sum(vehicule.score for vehicule in self.vehicles)
 
 def main():
     env = Env()
     # env.readFile('hashcode.in')
     # print(env.intersections)
     env.init('hashcode.in')
-    env.run()
     print(f"D={env.D} I={env.I} S={env.S} V={env.V} F={env.F}")
+    print(f"reward = {env.run()}")
     
 
 if __name__ == "__main__":
