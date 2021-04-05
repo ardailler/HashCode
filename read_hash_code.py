@@ -17,19 +17,22 @@ class Vehicle:
         self.D = int(d) # Duration of the full cycle
 
     def isLastStreet(self):
-        return seld.index == (self.nb_streets - 1)
+        return self.index == (self.nb_streets - 1)
     
     def calculateScore(self, t):
         self.score = self.F + (self.D - t)
+
+    def getStreet(self):
+        return self.streets[self.index]
+    
+    def step(self):
+        self.index += 1
 
     def __repr__(self):
         return str(f"nb_streets={self.nb_streets} streets=[{', '.join(self.streets)}]")
 
     def print(self):
         print(f"nb_streets={self.nb_streets} streets=[{', '.join(self.streets)}]")
-
-    def getStreet(self):
-        return self.streets[self.index]
 
 '''
 Street
@@ -68,9 +71,21 @@ class Street:
                 # and remove it from the street
                 del self.vehicles[index]
     
-    def step(self):
-        # next car avance
-        print('ok')
+    '''
+    -> if d >= timeToMove
+        -> then vehicle.step()
+        -> del vehicle
+        -> return vehicle
+    -> else return None
+    '''
+    def step(self, t):
+        (vehicle, timeWhenMove) = self.vehicles[-1]
+        if t >= timeWhenMove:
+            vehicle.step()
+            del self.vehicles[-1]
+            return vehicle
+        else:
+            return None
 
     def __repr__(self):
         return str(f"id_b={self.id_b} id_e={self.id_e} name={self.name} L={self.L} vehicles={self.vehicles}")
@@ -116,8 +131,11 @@ class Intersection:
             if (green_since + timer) - t <= 0:
                 self.nextScheduler(t)
                 (street, timer, green_since) = self.schedulers[self.index]
-            street.step()
 
+            vehicleToMove = street.step(i)
+            if not None:
+                street = vehicleToMove.getStreet()
+                self.streets_o[street].addVehicle(vehicleToMove, t)
             
 
     def __repr__(self):
@@ -224,10 +242,13 @@ class Env:
         hashcodeFile.close()
 
     def run(self):
-        for i in range(self.D): # ? D or (D - 1)
+        for t in range(self.D): # ? D or (D - 1)
             for id_inter, intersection in self.intersections.items():
-                intersection.step(i)
+                intersection.step(t)
                 break
+            # at the end of the intersections step we check if their are vehicle that has finish there path
+            for id_street, street in self.streets.items():
+                street.deleteVehiclesArrived(t)
             break
 
 def main():
