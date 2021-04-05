@@ -7,7 +7,7 @@ Vehicle
 '''
 class Vehicle:
     def __init__(self, nb_streets, streets):
-        self.nb_streets = nb_streets # Number of street before destination
+        self.nb_streets = int(nb_streets) # Number of street before destination
         self.streets = streets # List of streets names (path before destionation)
         self.index = 0 # Position in the streets path
         self.score = 0 # the score of the vehicle
@@ -18,27 +18,38 @@ class Vehicle:
     def print(self):
         print(f"nb_streets={self.nb_streets} streets=[{', '.join(self.streets)}]")
 
+    def getStreet(self):
+        return self.streets[self.index]
+
 '''
 Street
 @param name (string) : The unique name of the street
 @param id_b (int) : Intersection link to the begging of the street
 @param id_e (int) : Intersection link to the endding of the street
 @param T (int) : Time to travel across the street
-@param vehicles ((Vehicle, int)[]) : tuple list of vehicle and the time when they arrive at the end of street (ex: if D = 4 and T = 3 => 4 + 3 = 7)
+@param vehicles ((Vehicle, int)[]) : tuple list of vehicle and the time when they arrive at the end of street (ex: if D = 4 and T = 3 => 4 + 3 = 7 : when D >= 7 try to move)
 '''
 class Street:
     def __init__(self, id_b, id_e, name, time):
         self.name = name # Name of the street
-        self.id_b = id_b # Intersection link to the begging of the street
-        self.id_e = id_e # Intersection link to the endding of the street
-        self.T = time # Time to travel across the street
+        self.id_b = int(id_b) # Intersection link to the begging of the street
+        self.id_e = int(id_e) # Intersection link to the endding of the street
+        self.T = int(time) # Time to travel across the street
         self.vehicles = [] # tuple list of vehicle and the time when they arrive at the end of street (vehicle, 2)
+    
+    def addVehicle(self, vehicle, d):
+        if d == 0:
+            self.vehicles.append((vehicle, 0))
+        else:
+            self.vehicles.append((vehicle, (d + self.T)))
 
     def __repr__(self):
-        return str(f"id_b={self.id_b} id_e={self.id_e} name={self.name} T={self.T}")
+        vehicles = str(f"({v},{i})" for (v, i) in self.vehicles)
+        return str(f"id_b={self.id_b} id_e={self.id_e} name={self.name} T={self.T} vehicles={self.vehicles}")
 
     def print(self):
-        print(f"id_b={self.id_b} id_e={self.id_e} name={self.name} T={self.T}")
+        vehicles = str(f"({v},{i})" for (v, i) in self.vehicles)
+        print(f"id_b={self.id_b} id_e={self.id_e} name={self.name} T={self.T} vehicles={vehicles}")
 
 '''
 Intersection
@@ -50,7 +61,7 @@ Intersection
 '''
 class Intersection:
     def __init__(self, id_i):
-        self.id = id_i
+        self.id = int(id_i)
         self.streets_i = [] # List of incomming streets
         self.streets_o = [] # List of outgoing streets
         self.schedulers = [] # List of tuple (incomming street, duration of green light)
@@ -71,6 +82,13 @@ class Intersection:
 '''
 to display node graph
 ? https://www.python-course.eu/networkx.php
+
+Env
+@param D (int) : Duration of the full cycle
+@param I (int) : Number of intersections
+@param S (int) : Number of streets
+@param V (int) : Number of vehicles
+@param F (int) : Score for each vehicles (when endding their path)
 '''
 class Env:
     def __init__(self):
@@ -80,18 +98,18 @@ class Env:
         self.V = 0 # Number of vehicles
         self.F = 0 # Score for each vehicles (when endding their path)
 
-        self.streets = []
+        self.streets = {}
         self.intersections = {}
         self.vehicles = []
 
         self.visited_streets = []
         
     def saveInitValues(self, d, i, s, v, f):
-        self.D = d
-        self.I = i
-        self.S = s
-        self.V = v
-        self.F = f
+        self.D = int(d)
+        self.I = int(i)
+        self.S = int(s)
+        self.V = int(v)
+        self.F = int(f)
 
     def addOrCreateIntersection(self, id_i, street, inOrOut):
         if id_i in self.intersections: # the case where the intersection already exist
@@ -106,6 +124,17 @@ class Env:
             intersection.addStreetO(street)
         # updating or inserting the intersection
         self.intersections[id_i] = intersection
+
+    def init(self, path):
+        self.readFile(path)
+        for vehicle in self.vehicles:
+            current_street = vehicle.getStreet() # getting the current street of the current vehicle
+            self.streets[current_street].addVehicle(vehicle, 0) # adding this vehicle to his street (0 because it's init phase)
+            print("-------------------")
+            print(current_street)
+            print(self.streets[current_street])
+        print(self.intersections)
+
 
     def readFile(self, path):
         hashcodeFile = open(path, 'r')
@@ -128,7 +157,7 @@ class Env:
                 if (self.S + 1 >= count):
                     [id_b, id_e, name, time] = line.split() # read street line
                     street = Street(id_b, id_e, name, time) # create new Street Object
-                    self.streets.append(street) # adding our street in the env list
+                    self.streets[name] = street # adding our street in the env streets dictonnary
 
                     self.addOrCreateIntersection(id_b, street, 'out') # register this street in the outgoing street list of the intersection id_b
                     self.addOrCreateIntersection(id_e, street, 'in') # register this street in the incomming street list of the intersection id_e
@@ -147,12 +176,17 @@ class Env:
         # print(intersections_dict)
         hashcodeFile.close()
 
+    def run(self):
+        for i in range(self.D): # ? D or (D - 1)
+            print(i)
+
 
 def main():
     env = Env()
-    env.readFile('hashcode.in')
+    # env.readFile('hashcode.in')
+    # print(env.intersections)
+    env.init('hashcode.in')
     print(f"D={env.D} I={env.I} S={env.S} V={env.V} F={env.F}")
-    print(env.intersections)
     
 
 if __name__ == "__main__":
