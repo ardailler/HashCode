@@ -72,13 +72,13 @@ class Street:
                 del self.vehicles[index]
     
     def step(self, t):
-        (vehicle, timeWhenMove) = self.vehicles[0]
-        if t >= timeWhenMove:
-            vehicle.step()
-            del self.vehicles[0]
-            return vehicle
-        else:
-            return None
+        if len(self.vehicles) > 0:
+            (vehicle, timeWhenMove) = self.vehicles[0]
+            if t >= timeWhenMove:
+                vehicle.step()
+                del self.vehicles[0]
+                return vehicle
+        return None
 
     def __repr__(self):
         return str(f"id_b={self.id_b} id_e={self.id_e} name={self.name} L={self.L} vehicles={self.vehicles}")
@@ -109,6 +109,9 @@ class Intersection:
     def addStreetO(self, street):
         self.streets_o.append(street)
     
+    def addScheduler(self, street, duration, green_since = 0):
+        self.schedulers.append((street, duration, green_since))
+    
     '''
     Switch to the next green light
     '''
@@ -121,18 +124,19 @@ class Intersection:
         if (len(self.schedulers) > 0):
             (street, timer, green_since) = self.schedulers[self.index]
             # first we check if we need to switch green light
-            if (green_since + timer) >= t:
+            if (int(green_since) + int(timer)) >= int(t):
                 self.nextScheduler(t)
                 (street, timer, green_since) = self.schedulers[self.index]
-
             vehicleToMove = street.step(t)
-            if not None:
+            if vehicleToMove != None:
                 street = vehicleToMove.getStreet()
-                self.streets_o[street].addVehicle(vehicleToMove, t)
+                print(street)
+                index = next((i for i, s in enumerate(self.streets_o) if s.name == street))
+                self.streets_o[index].addVehicle(vehicleToMove, t)
             
 
     def __repr__(self):
-        return str(f"\nID={self.id} \n\t streets_i={self.streets_i} \n\t streets_o={self.streets_o}\n\n----------\n")
+        return str(f"\nID={self.id} \n\t streets_i={self.streets_i} \n\t streets_o={self.streets_o} \n\n\t streets_o={self.schedulers}\n\n----------\n")
 
     def print(self):
         print(f"\nID={self.id} \n\t streets_i={self.streets_i} \n\t streets_o={self.streets_o}\n\n----------\n")
@@ -217,8 +221,8 @@ class Env:
                     street = Street(id_b, id_e, name, time) # create new Street Object
                     self.streets[name] = street # adding our street in the env streets dictonnary
 
-                    self.addOrCreateIntersection(id_b, street, 'out') # register this street in the outgoing street list of the intersection id_b
-                    self.addOrCreateIntersection(id_e, street, 'in') # register this street in the incomming street list of the intersection id_e
+                    self.addOrCreateIntersection(int(id_b), street, 'out') # register this street in the outgoing street list of the intersection id_b
+                    self.addOrCreateIntersection(int(id_e), street, 'in') # register this street in the incomming street list of the intersection id_e
 
                 elif (self.S + 1 + self.V >= count):
                     vehicle_infos = line.split() # read street line
@@ -247,17 +251,35 @@ class Env:
         # ? not sure if we need to do that to
         for id_street, street in self.streets.items():
             street.deleteVehiclesArrived(t)
-
+        print()
         return sum(vehicule.score for vehicule in self.vehicles)
+    
+    def readSubmission(self, path):
+        submissionFile = open(path, 'r')
+        count = 0
+
+        # Get number of intersections
+        nb_iter = int(submissionFile.readline())
+        for inter in range(nb_iter):
+            id_inter = int(submissionFile.readline())
+            nb_green_lights = int(submissionFile.readline())
+            for g_light in range(nb_green_lights):
+                [street_name, duration] = submissionFile.readline().split()
+                self.intersections[id_inter].addScheduler(self.streets[street_name], duration)
+
+        submissionFile.close()
 
 def main():
     env = Env()
     # env.readFile('hashcode.in')
     # print(env.intersections)
-    env.init('hashcode.in')
+    env.init('exemple.in')
     print(f"D={env.D} I={env.I} S={env.S} V={env.V} F={env.F}")
-    print(f"reward = {env.run()}")
     
+    env.readSubmission('exemple_submission.in')
+    # print(env.intersections)
+
+    print(f"reward = {env.run()}")
 
 if __name__ == "__main__":
     # execute only if run as a script
