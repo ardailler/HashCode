@@ -3,14 +3,24 @@ Vehicle
 @param nb_streets (int) : number of streets the car must cross to complete its path
 @param streets (string[]) : the list of the street names
 @param index (int) : the current position of the car in this list
-@param score (int) : the current score of the car 
+@param score (int) : the current score of the car
+@param F (int) : Score for each vehicles (when endding their path)
+@param D (int) : Duration of the full cycle
 '''
 class Vehicle:
-    def __init__(self, nb_streets, streets):
+    def __init__(self, nb_streets, streets, f, d):
         self.nb_streets = int(nb_streets) # Number of street before destination
         self.streets = streets # List of streets names (path before destionation)
         self.index = 0 # Position in the streets path
         self.score = 0 # the score of the vehicle
+        self.F = int(f) # Score for each vehicles (when endding their path)
+        self.D = int(d) # Duration of the full cycle
+
+    def isLastStreet(self):
+        return seld.index == (self.nb_streets - 1)
+    
+    def calculateScore(self, t):
+        self.score = self.F + (self.D - t)
 
     def __repr__(self):
         return str(f"nb_streets={self.nb_streets} streets=[{', '.join(self.streets)}]")
@@ -26,7 +36,7 @@ Street
 @param name (string) : The unique name of the street
 @param id_b (int) : Intersection link to the begging of the street
 @param id_e (int) : Intersection link to the endding of the street
-@param T (int) : Time to travel across the street
+@param L (int) : Time to travel across the street
 @param vehicles ((Vehicle, int)[]) : tuple list of vehicle and the time when they arrive at the end of street (ex: if D = 4 and T = 3 => 4 + 3 = 7 : when D >= 7 try to move)
 '''
 class Street:
@@ -34,22 +44,35 @@ class Street:
         self.name = name # Name of the street
         self.id_b = int(id_b) # Intersection link to the begging of the street
         self.id_e = int(id_e) # Intersection link to the endding of the street
-        self.T = int(time) # Time to travel across the street
+        self.L = int(time) # Time to travel across the street
         self.vehicles = [] # tuple list of vehicle and the time when they arrive at the end of street (vehicle, 2)
     
-    def addVehicle(self, vehicle, d):
-        if d == 0:
+    def addVehicle(self, vehicle, t):
+        if t == 0:
             self.vehicles.append((vehicle, 0))
         else:
-            self.vehicles.append((vehicle, (d + self.T)))
+            self.vehicles.append((vehicle, (t + self.L)))
+
+    '''
+    deleteVehiclesArrived
+    t is the current time already use in this experience
+    '''
+    def deleteVehiclesArrived(self, t):
+        # we iterate the vehicles list in order to check every vehicles inside the current street
+        # note : vehicles are iterate on the same order then they was enter in the list (because of append at end of list and iterate from begging)
+        for index, (vehicle, time) in enumerate(self.vehicles):
+            # checking if the current vehicle is on it's last street and then if he arrived at the end of his last street
+            if vehicle.isLastStreet() and time >= t:
+                # if it's the case we calculate his score
+                vehicle.calculateScore(t)
+                # and remove it from the street
+                del self.vehicles[index]
 
     def __repr__(self):
-        vehicles = str(f"({v},{i})" for (v, i) in self.vehicles)
-        return str(f"id_b={self.id_b} id_e={self.id_e} name={self.name} T={self.T} vehicles={self.vehicles}")
+        return str(f"id_b={self.id_b} id_e={self.id_e} name={self.name} L={self.L} vehicles={self.vehicles}")
 
     def print(self):
-        vehicles = str(f"({v},{i})" for (v, i) in self.vehicles)
-        print(f"id_b={self.id_b} id_e={self.id_e} name={self.name} T={self.T} vehicles={vehicles}")
+        print(f"id_b={self.id_b} id_e={self.id_e} name={self.name} L={self.L} vehicles={self.vehicles}")
 
 '''
 Intersection
@@ -125,16 +148,16 @@ class Env:
         # updating or inserting the intersection
         self.intersections[id_i] = intersection
 
+    '''
+    init function
+    read the hashcodeFile and
+    position all vehicle at the end of their first street
+    '''
     def init(self, path):
         self.readFile(path)
         for vehicle in self.vehicles:
             current_street = vehicle.getStreet() # getting the current street of the current vehicle
             self.streets[current_street].addVehicle(vehicle, 0) # adding this vehicle to his street (0 because it's init phase)
-            print("-------------------")
-            print(current_street)
-            print(self.streets[current_street])
-        print(self.intersections)
-
 
     def readFile(self, path):
         hashcodeFile = open(path, 'r')
@@ -164,7 +187,7 @@ class Env:
 
                 elif (self.S + 1 + self.V >= count):
                     vehicle_infos = line.split() # read street line
-                    vehicle = Vehicle(vehicle_infos[0], vehicle_infos[1:]) # create a new Vehicle
+                    vehicle = Vehicle(vehicle_infos[0], vehicle_infos[1:], self.F, self.D) # create a new Vehicle
                     self.vehicles.append(vehicle)
                     # vehicle.print()
                     # print("Line_{}: {}".format(count, line.strip()))
@@ -179,7 +202,6 @@ class Env:
     def run(self):
         for i in range(self.D): # ? D or (D - 1)
             print(i)
-
 
 def main():
     env = Env()
