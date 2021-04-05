@@ -37,7 +37,7 @@ Street
 @param id_b (int) : Intersection link to the begging of the street
 @param id_e (int) : Intersection link to the endding of the street
 @param L (int) : Time to travel across the street
-@param vehicles ((Vehicle, int)[]) : tuple list of vehicle and the time when they arrive at the end of street (ex: if D = 4 and T = 3 => 4 + 3 = 7 : when D >= 7 try to move)
+@param vehicles ((Vehicle, int)[]) : tuple list of vehicle and the time when they arrive at the end of street (ex: if T = 1 and L = 3 => 1 + 3 = 4 : when T = 4 the car is at the end)
 '''
 class Street:
     def __init__(self, id_b, id_e, name, time):
@@ -67,6 +67,10 @@ class Street:
                 vehicle.calculateScore(t)
                 # and remove it from the street
                 del self.vehicles[index]
+    
+    def step(self):
+        # next car avance
+        print('ok')
 
     def __repr__(self):
         return str(f"id_b={self.id_b} id_e={self.id_e} name={self.name} L={self.L} vehicles={self.vehicles}")
@@ -80,21 +84,41 @@ Intersection
 @param streets_i (Street[]) : List of incomming streets
 @param streets_o (Street[]) : List of outgoing streets
 @param schedulers ((Street, int)[]) List of tuple (incomming street, duration of green light)
-@param index (int) : index of scheduler
+@param index (int) : index of scheduler@param D (int) : Duration of the full cycle
 '''
 class Intersection:
-    def __init__(self, id_i):
+    def __init__(self, id_i, d):
         self.id = int(id_i)
         self.streets_i = [] # List of incomming streets
         self.streets_o = [] # List of outgoing streets
         self.schedulers = [] # List of tuple (incomming street, duration of green light)
         self.index = 0 # index of scheduler
+        self.D = int(d) # Duration of the full cycle
     
     def addStreetI(self, street):
         self.streets_i.append(street)
 
     def addStreetO(self, street):
         self.streets_o.append(street)
+    
+    '''
+    Switch to the next green light
+    '''
+    def nextScheduler(self, t):
+        self.index += (self.index + 1) % len(self.schedulers) # go to next traffic light scheduler
+        (street, timer, green_since) = self.schedulers[self.index] # isolate values of next green light
+        self.schedulers[self.index] = (street, timer, t) # initialise the green light since value
+
+    def step(self, t):
+        if (len(self.schedulers) > 0):
+            (street, timer, green_since) = self.schedulers[self.index]
+            # first we check if we need to switch green light
+            if (green_since + timer) - t <= 0:
+                self.nextScheduler(t)
+                (street, timer, green_since) = self.schedulers[self.index]
+            street.step()
+
+            
 
     def __repr__(self):
         return str(f"\nID={self.id} \n\t streets_i={self.streets_i} \n\t streets_o={self.streets_o}\n\n----------\n")
@@ -138,7 +162,7 @@ class Env:
         if id_i in self.intersections: # the case where the intersection already exist
             intersection = self.intersections[id_i]
         else: # Case where the intersection not exist
-            intersection = Intersection(id_i)
+            intersection = Intersection(id_i, self.D)
         
         # selecting the list where we need to add the current street (incomming or outgoing street list)
         if inOrOut == 'in':
@@ -201,16 +225,37 @@ class Env:
 
     def run(self):
         for i in range(self.D): # ? D or (D - 1)
-            print(i)
+            for id_inter, intersection in self.intersections.items():
+                intersection.step(i)
+                break
+            break
 
 def main():
     env = Env()
     # env.readFile('hashcode.in')
     # print(env.intersections)
     env.init('hashcode.in')
+    env.run()
     print(f"D={env.D} I={env.I} S={env.S} V={env.V} F={env.F}")
     
 
 if __name__ == "__main__":
     # execute only if run as a script
     main()
+
+'''
+intersection.step()
+ -> get scheduler()
+    -> if scheduler.duration >= T
+        -> then switch light
+    -> street.step()
+        -> each vehicle
+            -> if d >= timeToMove
+                -> then vehicle.step()
+                -> del vehicle
+                -> return vehicle
+            -> else return None
+        -> if not None
+            -> then vehicle.getStreet()
+            -> search next in street_o and add vehicle
+'''
