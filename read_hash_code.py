@@ -20,6 +20,7 @@ class Vehicle:
         return self.index == (self.nb_streets - 1)
     
     def calculateScore(self, t):
+        print('')
         self.score = self.F + (self.D - t)
 
     def getStreet(self):
@@ -51,10 +52,10 @@ class Street:
         self.vehicles = [] # tuple list of vehicle and the time when they arrive at the end of street (vehicle, 2)
     
     def addVehicle(self, vehicle, t):
-        if t == 0:
-            self.vehicles.append((vehicle, 0))
-        else:
-            self.vehicles.append((vehicle, (t + self.L)))
+        self.vehicles.append((vehicle, (t + self.L)))
+    
+    def addInitVehicle(self, vehicle):
+        self.vehicles.append((vehicle, 0))
 
     '''
     deleteVehiclesArrived
@@ -196,7 +197,7 @@ class Env:
         self.readFile(path)
         for vehicle in self.vehicles:
             current_street = vehicle.getStreet() # getting the current street of the current vehicle
-            self.streets[current_street].addVehicle(vehicle, 0) # adding this vehicle to his street (0 because it's init phase)
+            self.streets[current_street].addInitVehicle(vehicle) # adding this vehicle to his street (0 because it's init phase)
 
     def readFile(self, path):
         hashcodeFile = open(path, 'r')
