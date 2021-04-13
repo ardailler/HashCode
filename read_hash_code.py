@@ -20,7 +20,6 @@ class Vehicle:
         return self.index == (self.nb_streets - 1)
     
     def calculateScore(self, t):
-        print('')
         self.score = self.F + (self.D - t)
 
     def getStreet(self):
@@ -66,7 +65,7 @@ class Street:
         # note : vehicles are iterate on the same order then they was enter in the list (because of append at end of list and iterate from begging)
         for index, (vehicle, time) in enumerate(self.vehicles):
             # checking if the current vehicle is on it's last street and then if he arrived at the end of his last street
-            if vehicle.isLastStreet() and time >= t:
+            if vehicle.isLastStreet() and time <= t:
                 # if it's the case we calculate his score
                 vehicle.calculateScore(t)
                 # and remove it from the street
@@ -117,7 +116,7 @@ class Intersection:
     Switch to the next green light
     '''
     def nextScheduler(self, t):
-        self.index += (self.index + 1) % len(self.schedulers) # go to next traffic light scheduler
+        self.index = (self.index + 1) % len(self.schedulers) # go to next traffic light scheduler
         (street, timer, green_since) = self.schedulers[self.index] # isolate values of next green light
         self.schedulers[self.index] = (street, timer, t) # initialise the green light since value
 
@@ -125,13 +124,12 @@ class Intersection:
         if (len(self.schedulers) > 0):
             (street, timer, green_since) = self.schedulers[self.index]
             # first we check if we need to switch green light
-            if (int(green_since) + int(timer)) >= int(t):
+            if (int(green_since) + int(timer)) == int(t):
                 self.nextScheduler(t)
                 (street, timer, green_since) = self.schedulers[self.index]
             vehicleToMove = street.step(t)
             if vehicleToMove != None:
                 street = vehicleToMove.getStreet()
-                print(street)
                 index = next((i for i, s in enumerate(self.streets_o) if s.name == street))
                 self.streets_o[index].addVehicle(vehicleToMove, t)
             
@@ -252,7 +250,7 @@ class Env:
         # ? not sure if we need to do that to
         for id_street, street in self.streets.items():
             street.deleteVehiclesArrived(t)
-        print()
+
         return sum(vehicule.score for vehicule in self.vehicles)
     
     def readSubmission(self, path):
